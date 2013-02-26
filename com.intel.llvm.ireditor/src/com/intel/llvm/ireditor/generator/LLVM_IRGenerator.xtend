@@ -27,13 +27,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.intel.llvm.ireditor.generator
 
+import com.intel.llvm.ireditor.lLVM_IR.FunctionDef
+import com.intel.llvm.ireditor.lLVM_IR.GlobalVariable
+import com.intel.llvm.ireditor.lLVM_IR.Model
+import com.intel.llvm.ireditor.lLVM_IR.NonLeftRecursiveType
+import com.intel.llvm.ireditor.lLVM_IR.Type
 import org.eclipse.emf.ecore.resource.Resource
-import org.eclipse.xtext.generator.IGenerator
 import org.eclipse.xtext.generator.IFileSystemAccess
+import org.eclipse.xtext.generator.IGenerator
 
 class LLVM_IRGenerator implements IGenerator {
-	
+
 	override void doGenerate(Resource resource, IFileSystemAccess fsa) {
-		//TODO implement me
-	}
+        for(m: resource.allContents.toIterable.filter(typeof(Model))) {
+            fsa.generateFile("main.ll",
+                m.compile);
+        }
+    }
+
+    def compile(Model m) '''
+«««        «IF e.eContainer != null»
+«««            package «e.eContainer.fullyQualifiedName»;
+«««        «ENDIF»
+        ; ModuleID = ''
+        «FOR g:m.elements.filter(typeof(GlobalVariable))»
+            «g.compile»
+        «ENDFOR»
+        «FOR g:m.elements.filter(typeof(FunctionDef))»
+            «g.compile»
+        «ENDFOR»
+    '''
+
+    def compile(GlobalVariable g) '''
+        @«g.name» = global «g.type.compile»
+    '''
+
+    def compile(FunctionDef funcDef) '''
+        define
+    '''
+
+    def compile(Type t) '''
+        «t.baseType.compile»
+    '''
+
+    def compile(NonLeftRecursiveType nlrt) '''
+        type
+    '''
 }
